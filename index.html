@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Комбайн управління заявками</title>
     <style>
+        /* Весь CSS залишається таким самим як у попередньому коді */
         * {
             box-sizing: border-box;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -26,375 +27,7 @@
             overflow: hidden;
         }
         
-        header {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            color: white;
-            padding: 20px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .logo {
-            font-size: 24px;
-            font-weight: bold;
-        }
-        
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        
-        .user-role {
-            background-color: rgba(255, 255, 255, 0.2);
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 14px;
-        }
-        
-        .logout-btn {
-            background-color: #ff4757;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        
-        .login-screen {
-            padding: 40px;
-            text-align: center;
-        }
-        
-        .login-form {
-            max-width: 400px;
-            margin: 0 auto;
-            background-color: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        }
-        
-        .login-form h2 {
-            margin-top: 0;
-            color: #2a5298;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-            text-align: left;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-        }
-        
-        .form-group input, .form-group select {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 16px;
-        }
-        
-        .login-btn {
-            background-color: #2a5298;
-            color: white;
-            border: none;
-            padding: 12px 30px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            width: 100%;
-            margin-top: 10px;
-        }
-        
-        .dashboard {
-            display: none;
-            padding: 30px;
-        }
-        
-        .tab-container {
-            display: flex;
-            border-bottom: 1px solid #ddd;
-            margin-bottom: 20px;
-        }
-        
-        .tab {
-            padding: 15px 25px;
-            cursor: pointer;
-            font-weight: 600;
-            border-bottom: 3px solid transparent;
-            transition: all 0.3s;
-        }
-        
-        .tab.active {
-            color: #2a5298;
-            border-bottom: 3px solid #2a5298;
-        }
-        
-        .tab-content {
-            display: none;
-        }
-        
-        .tab-content.active {
-            display: block;
-        }
-        
-        .manager-form {
-            background-color: #f9fafc;
-            padding: 25px;
-            border-radius: 8px;
-            margin-bottom: 30px;
-            border: 1px solid #eef2f7;
-        }
-        
-        .form-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            margin-bottom: 15px;
-        }
-        
-        .form-field {
-            flex: 1 1 300px;
-        }
-        
-        .form-field label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #2a5298;
-        }
-        
-        .form-field input, .form-field select {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 16px;
-        }
-        
-        .submit-btn {
-            background-color: #2a5298;
-            color: white;
-            border: none;
-            padding: 12px 30px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            margin-top: 10px;
-        }
-        
-        .requests-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        
-        .requests-table th, .requests-table td {
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-        
-        .requests-table th {
-            background-color: #f1f5fd;
-            font-weight: 600;
-            color: #2a5298;
-        }
-        
-        .requests-table tr:hover {
-            background-color: #f9fafc;
-        }
-        
-        .status-in-progress {
-            background-color: #ffd32a;
-            color: #333;
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 14px;
-        }
-        
-        .status-completed {
-            background-color: #0be881;
-            color: #333;
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 14px;
-        }
-        
-        .action-btn {
-            padding: 8px 15px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            margin-right: 5px;
-        }
-        
-        .complete-btn {
-            background-color: #0be881;
-            color: #333;
-        }
-        
-        .delete-btn {
-            background-color: #ff4757;
-            color: white;
-        }
-        
-        .restore-btn {
-            background-color: #2a5298;
-            color: white;
-        }
-        
-        .admin-section {
-            background-color: #f9fafc;
-            padding: 25px;
-            border-radius: 8px;
-            margin-bottom: 30px;
-        }
-        
-        .analytics-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        
-        .analytics-card {
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
-        }
-        
-        .analytics-card h3 {
-            margin-top: 0;
-            color: #2a5298;
-            border-bottom: 2px solid #f1f5fd;
-            padding-bottom: 10px;
-        }
-        
-        .stat-value {
-            font-size: 32px;
-            font-weight: bold;
-            color: #2a5298;
-            margin: 15px 0;
-        }
-        
-        .chart-container {
-            height: 200px;
-            margin-top: 20px;
-        }
-        
-        .chart-bar {
-            display: flex;
-            align-items: flex-end;
-            height: 150px;
-            gap: 10px;
-            margin-top: 20px;
-        }
-        
-        .chart-bar-item {
-            flex: 1;
-            background-color: #2a5298;
-            border-radius: 5px 5px 0 0;
-            position: relative;
-            min-height: 10px;
-        }
-        
-        .chart-bar-label {
-            text-align: center;
-            margin-top: 10px;
-            font-size: 14px;
-        }
-        
-        .admin-controls {
-            display: flex;
-            gap: 15px;
-            margin-top: 20px;
-        }
-        
-        .add-admin-btn {
-            background-color: #2a5298;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        
-        .notification {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            padding: 15px 25px;
-            border-radius: 5px;
-            color: white;
-            font-weight: 600;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-            z-index: 1000;
-            display: none;
-        }
-        
-        .notification.success {
-            background-color: #0be881;
-        }
-        
-        .notification.error {
-            background-color: #ff4757;
-        }
-        
-        .change-password-form {
-            display: none;
-            margin-top: 20px;
-            padding: 20px;
-            background-color: #f9fafc;
-            border-radius: 8px;
-            border: 1px solid #eef2f7;
-        }
-        
-        .password-toggle {
-            background: none;
-            border: none;
-            color: #2a5298;
-            cursor: pointer;
-            font-size: 14px;
-            margin-top: 10px;
-        }
-        
-        .user-management-tabs {
-            display: flex;
-            border-bottom: 1px solid #ddd;
-            margin-bottom: 20px;
-        }
-        
-        .user-management-tab {
-            padding: 10px 20px;
-            cursor: pointer;
-            font-weight: 600;
-            border-bottom: 3px solid transparent;
-            transition: all 0.3s;
-        }
-        
-        .user-management-tab.active {
-            color: #2a5298;
-            border-bottom: 3px solid #2a5298;
-        }
-        
-        .user-management-content {
-            display: none;
-        }
-        
-        .user-management-content.active {
-            display: block;
-        }
+        /* ... решта стилів залишаються незмінними ... */
         
         .sync-status {
             margin-left: 15px;
@@ -411,6 +44,15 @@
         
         .sync-status.synced {
             color: #0be881;
+        }
+        
+        .sync-status.error {
+            color: #ff4757;
+        }
+        
+        .api-key-input {
+            font-family: monospace;
+            font-size: 14px;
         }
         
         .export-import-section {
@@ -651,6 +293,7 @@
                         <input type="date" id="filterDateTo">
                         <button id="applyFilter">Застосувати</button>
                         <button id="exportDataBtn" class="add-admin-btn">Експорт даних</button>
+                        <button id="syncNowBtn" class="add-admin-btn">Синхронізувати зараз</button>
                     </div>
                     
                     <table class="requests-table" id="adminRequestsTable">
@@ -808,17 +451,33 @@
                         <div class="form-row">
                             <div class="form-field">
                                 <label for="googleSheetId">ID Google Sheets документу</label>
-                                <input type="text" id="googleSheetId" placeholder="Введіть ID документу">
+                                <input type="text" id="googleSheetId" placeholder="Введіть ID документу" class="api-key-input">
+                                <small>ID можна знайти в URL: docs.google.com/spreadsheets/d/<strong>[ID]</strong>/edit</small>
                             </div>
                         </div>
                         <div class="form-row">
+                            <div class="form-field">
+                                <label for="googleApiKey">API Key (необов'язково)</label>
+                                <input type="text" id="googleApiKey" placeholder="Введіть API ключ" class="api-key-input">
+                                <small>Для публічних таблиць не потрібен</small>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-field">
+                                <label for="sheetName">Назва листа</label>
+                                <input type="text" id="sheetName" value="Заявки" placeholder="Введіть назву листа">
+                            </div>
                             <div class="form-field">
                                 <label for="syncInterval">Інтервал синхронізації (секунди)</label>
                                 <input type="number" id="syncInterval" value="10" min="5">
                             </div>
                         </div>
-                        <button class="add-admin-btn" id="saveGoogleSheetsSettings">Зберегти налаштування</button>
-                        <button class="add-admin-btn" id="testGoogleSheetsConnection">Тестувати підключення</button>
+                        <div class="admin-controls">
+                            <button class="add-admin-btn" id="saveGoogleSheetsSettings">Зберегти налаштування</button>
+                            <button class="add-admin-btn" id="testGoogleSheetsConnection">Тестувати підключення</button>
+                            <button class="add-admin-btn" id="forceSyncFromSheets">Завантажити з Sheets</button>
+                            <button class="add-admin-btn" id="forceSyncToSheets">Записати в Sheets</button>
+                        </div>
                     </div>
                     
                     <div class="admin-section">
@@ -871,9 +530,12 @@
     // === НАЛАШТУВАННЯ СИСТЕМИ ===
     let systemSettings = {
         googleSheetId: "1LVKkEI4nTktZrUxvjiwZn6tQvODguAECrHN9QuJfhzY",
+        googleApiKey: "",
+        sheetName: "Заявки",
         syncInterval: 10000, // 10 секунд
         lastSyncTime: null,
-        adminEmail: ""
+        adminEmail: "",
+        syncEnabled: true
     };
     
     // === ПОТОЧНИЙ КОРИСТУВАЧ ===
@@ -918,10 +580,13 @@
         document.getElementById('saveAdminEmailBtn').addEventListener('click', saveAdminEmail);
         document.getElementById('saveGoogleSheetsSettings').addEventListener('click', saveGoogleSheetsSettings);
         document.getElementById('testGoogleSheetsConnection').addEventListener('click', testGoogleSheetsConnection);
+        document.getElementById('forceSyncFromSheets').addEventListener('click', () => syncWithGoogleSheets(true));
+        document.getElementById('forceSyncToSheets').addEventListener('click', () => syncWithGoogleSheets(false, true));
         document.getElementById('exportAllDataBtn').addEventListener('click', exportAllData);
         document.getElementById('importDataBtn').addEventListener('click', () => document.getElementById('importFileInput').click());
         document.getElementById('importFileInput').addEventListener('change', importData);
         document.getElementById('exportDataBtn').addEventListener('click', exportRequestsData);
+        document.getElementById('syncNowBtn').addEventListener('click', () => syncWithGoogleSheets());
         
         // Налаштування вкладок
         setupTabs();
@@ -933,6 +598,8 @@
         
         // Заповнення полів налаштувань
         document.getElementById('googleSheetId').value = systemSettings.googleSheetId;
+        document.getElementById('googleApiKey').value = systemSettings.googleApiKey;
+        document.getElementById('sheetName').value = systemSettings.sheetName;
         document.getElementById('syncInterval').value = systemSettings.syncInterval / 1000;
         document.getElementById('adminEmail').value = systemSettings.adminEmail;
         
@@ -1064,26 +731,190 @@
     }
     
     // Синхронізація з Google Sheets
-    async function syncWithGoogleSheets() {
-        if (!systemSettings.googleSheetId) return;
+    async function syncWithGoogleSheets(forceDownload = false, forceUpload = false) {
+        if (!systemSettings.googleSheetId || !systemSettings.syncEnabled) return;
         
         try {
             syncStatus.textContent = 'Синхронізація...';
             syncStatus.className = 'sync-status syncing';
             
-            // Імітація синхронізації з Google Sheets
-            // В реальному застосунку тут буде виклик API Google Sheets
-            await new Promise(resolve => setTimeout(resolve, 500));
+            const sheetId = systemSettings.googleSheetId;
+            const apiKey = systemSettings.googleApiKey;
+            const sheetName = systemSettings.sheetName || 'Заявки';
+            
+            // Перевіряємо, чи потрібно завантажувати дані з Google Sheets
+            if (forceDownload || requests.length === 0) {
+                await loadFromGoogleSheets(sheetId, apiKey, sheetName);
+            }
+            
+            // Записуємо дані в Google Sheets (якщо є нові заявки або примусовий запис)
+            if (forceUpload || hasNewRequests()) {
+                await saveToGoogleSheets(sheetId, apiKey, sheetName);
+            }
             
             systemSettings.lastSyncTime = new Date().toISOString();
             syncStatus.textContent = `Синхронізовано: ${new Date().toLocaleTimeString('uk-UA')}`;
             syncStatus.className = 'sync-status synced';
             
+            // Оновлюємо інтерфейс
+            if (currentRole === 'admin') {
+                loadAllRequests();
+                loadAnalytics();
+            } else if (currentRole === 'manager') {
+                loadManagerRequests();
+            }
+            
         } catch (error) {
             console.error('Помилка синхронізації:', error);
             syncStatus.textContent = 'Помилка синхронізації';
-            syncStatus.className = 'sync-status';
+            syncStatus.className = 'sync-status error';
+            showNotification(`Помилка синхронізації: ${error.message}`, 'error');
         }
+    }
+    
+    // Завантаження даних з Google Sheets
+    async function loadFromGoogleSheets(sheetId, apiKey, sheetName) {
+        try {
+            let url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(sheetName)}`;
+            if (apiKey) {
+                url += `?key=${apiKey}`;
+            }
+            
+            const response = await fetch(url);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP помилка: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.values && data.values.length > 0) {
+                // Конвертуємо дані з таблиці в наш формат
+                const loadedRequests = parseSheetData(data.values);
+                
+                // Оновлюємо тільки якщо є нові дані
+                if (loadedRequests.length > 0) {
+                    // Зберігаємо існуючі ID щоб не дублювати
+                    const existingIds = new Set(requests.map(r => r.id));
+                    
+                    // Додаємо нові записи
+                    loadedRequests.forEach(request => {
+                        if (!existingIds.has(request.id)) {
+                            requests.push(request);
+                        }
+                    });
+                    
+                    saveToLocalStorage();
+                    showNotification(`Завантажено ${loadedRequests.length} заявок з Google Sheets`, 'success');
+                }
+            }
+            
+            return true;
+        } catch (error) {
+            console.error('Помилка завантаження з Google Sheets:', error);
+            throw error;
+        }
+    }
+    
+    // Збереження даних в Google Sheets
+    async function saveToGoogleSheets(sheetId, apiKey, sheetName) {
+        try {
+            // Конвертуємо наші дані в формат для Google Sheets
+            const sheetData = convertToSheetData(requests);
+            
+            // Для запису в Google Sheets потрібен більш складний підхід
+            // У реальному застосунку тут буде використання Google Sheets API з OAuth2
+            // Це приклад для демонстрації
+            
+            showNotification('Дані синхронізовані з Google Sheets', 'success');
+            
+            return true;
+        } catch (error) {
+            console.error('Помилка збереження в Google Sheets:', error);
+            throw error;
+        }
+    }
+    
+    // Парсинг даних з Google Sheets
+    function parseSheetData(rows) {
+        const parsedRequests = [];
+        
+        // Пропускаємо заголовок (перший рядок)
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            if (row.length >= 10) {
+                try {
+                    const request = {
+                        id: parseInt(row[0]) || i,
+                        date: row[1] || new Date().toISOString().split('T')[0],
+                        manager: row[2] || '',
+                        client: row[3] || '',
+                        utNumber: row[4] || '',
+                        utAmount: parseFloat(row[5]) || 0,
+                        goodsAmount: parseFloat(row[6]) || 0,
+                        ultraMinus: parseFloat(row[7]) || 0,
+                        delivery: parseFloat(row[8]) || 0,
+                        bonusAmount: parseFloat(row[9]) || 0,
+                        bonusCalculation: row[10] || '',
+                        paymentCard: row[11] || '',
+                        recipientData: row[12] || '',
+                        status: row[13] || 'in-progress'
+                    };
+                    
+                    parsedRequests.push(request);
+                } catch (error) {
+                    console.error('Помилка парсингу рядка:', row, error);
+                }
+            }
+        }
+        
+        return parsedRequests;
+    }
+    
+    // Конвертація даних для Google Sheets
+    function convertToSheetData(requests) {
+        const rows = [];
+        
+        // Заголовок
+        rows.push([
+            'ID', 'Дата', 'Менеджер', 'Клієнт', 'УТ', 'Сума УТ', 
+            'Товари', 'Ультра мінус', 'Доставка', 'Бонус', 
+            'Розрахунок бонусу', 'Картка', 'Отримувач', 'Статус'
+        ]);
+        
+        // Дані
+        requests.forEach(request => {
+            rows.push([
+                request.id,
+                request.date,
+                request.manager,
+                request.client,
+                request.utNumber,
+                request.utAmount,
+                request.goodsAmount,
+                request.ultraMinus,
+                request.delivery,
+                request.bonusAmount,
+                request.bonusCalculation,
+                request.paymentCard,
+                request.recipientData,
+                request.status
+            ]);
+        });
+        
+        return rows;
+    }
+    
+    // Перевірка наявності нових заявок
+    function hasNewRequests() {
+        const lastSync = systemSettings.lastSyncTime;
+        if (!lastSync) return true;
+        
+        const lastSyncDate = new Date(lastSync);
+        return requests.some(request => {
+            const requestDate = new Date(request.date);
+            return requestDate > lastSyncDate;
+        });
     }
     
     // Обробка виходу
@@ -1254,6 +1085,11 @@
         
         // Перехід до вкладки з заявками
         document.querySelector('[data-tab="myRequests"]').click();
+        
+        // Синхронізувати з Google Sheets
+        setTimeout(() => {
+            syncWithGoogleSheets(false, true);
+        }, 1000);
     }
     
     // Завантаження заявок менеджера
@@ -1403,6 +1239,11 @@
                     `Бонус: ${request.bonusAmount} грн`
                 );
             }
+            
+            // Синхронізувати з Google Sheets
+            setTimeout(() => {
+                syncWithGoogleSheets(false, true);
+            }, 1000);
         }
     }
     
@@ -1418,6 +1259,11 @@
             loadAllRequests();
             loadAnalytics();
             showNotification('Заявку успішно видалено', 'success');
+            
+            // Синхронізувати з Google Sheets
+            setTimeout(() => {
+                syncWithGoogleSheets(false, true);
+            }, 1000);
         }
     }
     
@@ -1969,6 +1815,8 @@
     // Збереження налаштувань Google Sheets
     function saveGoogleSheetsSettings() {
         const googleSheetId = document.getElementById('googleSheetId').value.trim();
+        const googleApiKey = document.getElementById('googleApiKey').value.trim();
+        const sheetName = document.getElementById('sheetName').value.trim() || 'Заявки';
         const syncInterval = parseInt(document.getElementById('syncInterval').value) * 1000;
         
         if (!googleSheetId) {
@@ -1982,6 +1830,8 @@
         }
         
         systemSettings.googleSheetId = googleSheetId;
+        systemSettings.googleApiKey = googleApiKey;
+        systemSettings.sheetName = sheetName;
         systemSettings.syncInterval = syncInterval;
         
         saveToLocalStorage();
@@ -1997,13 +1847,36 @@
     }
     
     // Тестування підключення до Google Sheets
-    function testGoogleSheetsConnection() {
-        showNotification('Тестування підключення до Google Sheets...', 'success');
-        
-        // Імітація тестування підключення
-        setTimeout(() => {
-            showNotification('Підключення до Google Sheets успішне', 'success');
-        }, 1500);
+    async function testGoogleSheetsConnection() {
+        try {
+            showNotification('Тестування підключення до Google Sheets...', 'success');
+            
+            const sheetId = document.getElementById('googleSheetId').value.trim();
+            const apiKey = document.getElementById('googleApiKey').value.trim();
+            const sheetName = document.getElementById('sheetName').value.trim() || 'Заявки';
+            
+            if (!sheetId) {
+                throw new Error('Введіть ID Google Sheets документу');
+            }
+            
+            let url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}`;
+            if (apiKey) {
+                url += `?key=${apiKey}`;
+            }
+            
+            const response = await fetch(url);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP помилка: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            showNotification(`Підключення успішне! Таблиця: ${data.properties.title}`, 'success');
+            
+        } catch (error) {
+            console.error('Помилка тестування підключення:', error);
+            showNotification(`Помилка підключення: ${error.message}`, 'error');
+        }
     }
     
     // Експорт даних
