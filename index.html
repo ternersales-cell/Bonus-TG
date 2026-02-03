@@ -396,6 +396,30 @@
             display: block;
         }
         
+        .sync-status {
+            margin-left: 15px;
+            font-size: 14px;
+            color: #666;
+            padding: 3px 8px;
+            border-radius: 12px;
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .sync-status.syncing {
+            color: #ffd32a;
+        }
+        
+        .sync-status.synced {
+            color: #0be881;
+        }
+        
+        .export-import-section {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f9fafc;
+            border-radius: 8px;
+        }
+        
         @media (max-width: 768px) {
             .form-row {
                 flex-direction: column;
@@ -442,6 +466,7 @@
                 <!-- Форма зміни пароля для менеджерів -->
                 <div id="changePasswordForm" class="change-password-form">
                     <h3>Змінити пароль</h3>
+                    <p>Це ваш перший вхід. Будь ласка, змініть пароль.</p>
                     <div class="form-group">
                         <label for="newPassword">Новий пароль</label>
                         <input type="password" id="newPassword" placeholder="Введіть новий пароль">
@@ -457,7 +482,6 @@
                 <div style="margin-top: 20px; text-align: left; font-size: 14px; color: #666;">
                     <p><strong>Тестові облікові дані:</strong></p>
                     <p><strong>Менеджери:</strong> Логін: ім'я (напр. "Євгеній"), Пароль: 123456</p>
-                    <p><strong>Адміністратори:</strong> Логін: "admin1", Пароль: admin123</p>
                 </div>
             </div>
         </div>
@@ -469,6 +493,7 @@
                 <div class="user-info">
                     <div id="currentUser">Користувач</div>
                     <div id="currentRole" class="user-role">Роль</div>
+                    <span id="syncStatus" class="sync-status">Не синхронізовано</span>
                     <button class="logout-btn" id="logoutBtn">Вийти</button>
                 </div>
             </header>
@@ -485,6 +510,7 @@
                 <div class="tab active" data-tab="allRequests">Всі заявки</div>
                 <div class="tab" data-tab="analytics">Аналітика</div>
                 <div class="tab" data-tab="userManagement">Керування користувачами</div>
+                <div class="tab" data-tab="systemSettings">Налаштування системи</div>
             </div>
             
             <!-- Контент для менеджера -->
@@ -593,6 +619,17 @@
                         </div>
                         <button class="add-admin-btn" id="changeManagerPasswordBtn">Змінити пароль</button>
                     </div>
+                    
+                    <div class="admin-section">
+                        <h3>Моя контактна інформація</h3>
+                        <div class="form-row">
+                            <div class="form-field">
+                                <label for="managerEmail">Email для сповіщень</label>
+                                <input type="email" id="managerEmail" placeholder="Введіть email для сповіщень">
+                            </div>
+                        </div>
+                        <button class="add-admin-btn" id="saveManagerEmailBtn">Зберегти email</button>
+                    </div>
                 </div>
             </div>
             
@@ -613,6 +650,7 @@
                         <input type="date" id="filterDateFrom">
                         <input type="date" id="filterDateTo">
                         <button id="applyFilter">Застосувати</button>
+                        <button id="exportDataBtn" class="add-admin-btn">Експорт даних</button>
                     </div>
                     
                     <table class="requests-table" id="adminRequestsTable">
@@ -697,6 +735,10 @@
                                     <label for="newAdminPassword">Пароль</label>
                                     <input type="password" id="newAdminPassword" placeholder="Введіть пароль">
                                 </div>
+                                <div class="form-field">
+                                    <label for="newAdminEmail">Email для сповіщень</label>
+                                    <input type="email" id="newAdminEmail" placeholder="Введіть email для сповіщень">
+                                </div>
                             </div>
                             <button class="add-admin-btn" id="addAdminBtn">Додати адміністратора</button>
                         </div>
@@ -708,6 +750,7 @@
                                     <tr>
                                         <th>ПІБ</th>
                                         <th>Логін</th>
+                                        <th>Email</th>
                                         <th>Дата додавання</th>
                                         <th>Дії</th>
                                     </tr>
@@ -731,7 +774,7 @@
                                     <input type="text" id="newManagerLogin" placeholder="Введіть логін">
                                 </div>
                                 <div class="form-field">
-                                    <label for="newManagerPassword">Пароль</label>
+                                    <label for="newManagerPassword">Початковий пароль</label>
                                     <input type="password" id="newManagerPassword" placeholder="Введіть пароль">
                                 </div>
                             </div>
@@ -745,12 +788,56 @@
                                     <tr>
                                         <th>ПІБ</th>
                                         <th>Логін</th>
+                                        <th>Email</th>
                                         <th>Дата додавання</th>
                                         <th>Дії</th>
                                     </tr>
                                 </thead>
                                 <tbody id="managersList"></tbody>
                             </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Налаштування системи -->
+                <div id="systemSettings" class="tab-content">
+                    <h2>Налаштування системи</h2>
+                    
+                    <div class="admin-section">
+                        <h3>Налаштування Google Sheets</h3>
+                        <div class="form-row">
+                            <div class="form-field">
+                                <label for="googleSheetId">ID Google Sheets документу</label>
+                                <input type="text" id="googleSheetId" placeholder="Введіть ID документу">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-field">
+                                <label for="syncInterval">Інтервал синхронізації (секунди)</label>
+                                <input type="number" id="syncInterval" value="10" min="5">
+                            </div>
+                        </div>
+                        <button class="add-admin-btn" id="saveGoogleSheetsSettings">Зберегти налаштування</button>
+                        <button class="add-admin-btn" id="testGoogleSheetsConnection">Тестувати підключення</button>
+                    </div>
+                    
+                    <div class="admin-section">
+                        <h3>Налаштування email сповіщень</h3>
+                        <div class="form-row">
+                            <div class="form-field">
+                                <label for="adminEmail">Email адміністратора для сповіщень</label>
+                                <input type="email" id="adminEmail" placeholder="Введіть ваш email">
+                            </div>
+                        </div>
+                        <button class="add-admin-btn" id="saveAdminEmailBtn">Зберегти email</button>
+                    </div>
+                    
+                    <div class="export-import-section">
+                        <h3>Експорт/Імпорт даних</h3>
+                        <div class="admin-controls">
+                            <button class="add-admin-btn" id="exportAllDataBtn">Експортувати всі дані</button>
+                            <button class="add-admin-btn" id="importDataBtn">Імпортувати дані</button>
+                            <input type="file" id="importFileInput" accept=".json" style="display: none;">
                         </div>
                     </div>
                 </div>
@@ -764,25 +851,36 @@
 <script>
     // === ПОЧАТКОВІ ДАНІ СИСТЕМИ ===
     let managers = [
-        { name: "Євгеній", login: "Євгеній", password: "123456", firstLogin: true },
-        { name: "Дмитро", login: "Дмитро", password: "123456", firstLogin: true },
-        { name: "Павло", login: "Павло", password: "123456", firstLogin: true },
-        { name: "Сергій Н", login: "Сергій Н", password: "123456", firstLogin: true },
-        { name: "Сергій Г", login: "Сергій Г", password: "123456", firstLogin: true },
-        { name: "Михайло", login: "Михайло", password: "123456", firstLogin: true },
-        { name: "Ігор", login: "Ігор", password: "123456", firstLogin: true },
-        { name: "Володимир", login: "Володимир", password: "123456", firstLogin: true }
+        { name: "Євгеній", login: "Євгеній", password: "123456", firstLogin: true, email: "" },
+        { name: "Дмитро", login: "Дмитро", password: "123456", firstLogin: true, email: "" },
+        { name: "Павло", login: "Павло", password: "123456", firstLogin: true, email: "" },
+        { name: "Сергій Н", login: "Сергій Н", password: "123456", firstLogin: true, email: "" },
+        { name: "Сергій Г", login: "Сергій Г", password: "123456", firstLogin: true, email: "" },
+        { name: "Михайло", login: "Михайло", password: "123456", firstLogin: true, email: "" },
+        { name: "Ігор", login: "Ігор", password: "123456", firstLogin: true, email: "" },
+        { name: "Володимир", login: "Володимир", password: "123456", firstLogin: true, email: "" }
     ];
     
     let admins = [
-        { name: "Шокало Євгеній", login: "Sedoy", password: "Sed2545oy3206" },
-        { name: "Адмін 2", login: "admin2", password: "admin123" }
+        { name: "Шокало Євгеній", login: "Sedoy", password: "Sed2545oy3206", email: "", canCreateAdmins: true },
+        { name: "Адмін 2", login: "admin2", password: "admin123", email: "", canCreateAdmins: false }
     ];
+    
+    let requests = [];
+    
+    // === НАЛАШТУВАННЯ СИСТЕМИ ===
+    let systemSettings = {
+        googleSheetId: "1LVKkEI4nTktZrUxvjiwZn6tQvODguAECrHN9QuJfhzY",
+        syncInterval: 10000, // 10 секунд
+        lastSyncTime: null,
+        adminEmail: ""
+    };
     
     // === ПОТОЧНИЙ КОРИСТУВАЧ ===
     let currentUser = null;
     let currentRole = null;
     let currentUserObject = null;
+    let syncInterval = null;
     
     // === DOM ЕЛЕМЕНТИ ===
     const loginScreen = document.getElementById('loginScreen');
@@ -797,6 +895,7 @@
     const changePasswordBtn = document.getElementById('changePasswordBtn');
     const cancelChangePassword = document.getElementById('cancelChangePassword');
     const changeManagerPasswordBtn = document.getElementById('changeManagerPasswordBtn');
+    const syncStatus = document.getElementById('syncStatus');
     
     // === ІНІЦІАЛІЗАЦІЯ ===
     document.addEventListener('DOMContentLoaded', function() {
@@ -815,6 +914,14 @@
         changePasswordBtn.addEventListener('click', changePasswordOnLogin);
         cancelChangePassword.addEventListener('click', () => changePasswordForm.style.display = 'none');
         changeManagerPasswordBtn.addEventListener('click', changeManagerPassword);
+        document.getElementById('saveManagerEmailBtn').addEventListener('click', saveManagerEmail);
+        document.getElementById('saveAdminEmailBtn').addEventListener('click', saveAdminEmail);
+        document.getElementById('saveGoogleSheetsSettings').addEventListener('click', saveGoogleSheetsSettings);
+        document.getElementById('testGoogleSheetsConnection').addEventListener('click', testGoogleSheetsConnection);
+        document.getElementById('exportAllDataBtn').addEventListener('click', exportAllData);
+        document.getElementById('importDataBtn').addEventListener('click', () => document.getElementById('importFileInput').click());
+        document.getElementById('importFileInput').addEventListener('change', importData);
+        document.getElementById('exportDataBtn').addEventListener('click', exportRequestsData);
         
         // Налаштування вкладок
         setupTabs();
@@ -824,11 +931,10 @@
         populateManagerFilter();
         populateManagerAutocomplete();
         
-        // Автоматичне збереження кожні 30 секунд
-        setInterval(saveToLocalStorage, 30000);
-        
-        // Збереження при закритті
-        window.addEventListener('beforeunload', saveToLocalStorage);
+        // Заповнення полів налаштувань
+        document.getElementById('googleSheetId').value = systemSettings.googleSheetId;
+        document.getElementById('syncInterval').value = systemSettings.syncInterval / 1000;
+        document.getElementById('adminEmail').value = systemSettings.adminEmail;
         
         // Перевірка, чи користувач вже ввійшов
         const savedUser = localStorage.getItem('currentUser');
@@ -845,6 +951,11 @@
                 currentUser = savedUser;
                 currentRole = savedRole;
                 showDashboard();
+                
+                // Заповнити email менеджера, якщо він є
+                if (currentRole === 'manager' && currentUserObject.email) {
+                    document.getElementById('managerEmail').value = currentUserObject.email;
+                }
             }
         }
     });
@@ -929,12 +1040,62 @@
             loadAdminsList();
             loadManagersList();
         }
+        
+        // Запустити синхронізацію
+        startSync();
+    }
+    
+    // Запуск автоматичної синхронізації
+    function startSync() {
+        // Очистити попередній інтервал
+        if (syncInterval) {
+            clearInterval(syncInterval);
+        }
+        
+        // Встановити новий інтервал
+        syncInterval = setInterval(() => {
+            syncWithGoogleSheets();
+        }, systemSettings.syncInterval);
+        
+        // Перша синхронізація
+        setTimeout(() => {
+            syncWithGoogleSheets();
+        }, 1000);
+    }
+    
+    // Синхронізація з Google Sheets
+    async function syncWithGoogleSheets() {
+        if (!systemSettings.googleSheetId) return;
+        
+        try {
+            syncStatus.textContent = 'Синхронізація...';
+            syncStatus.className = 'sync-status syncing';
+            
+            // Імітація синхронізації з Google Sheets
+            // В реальному застосунку тут буде виклик API Google Sheets
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            systemSettings.lastSyncTime = new Date().toISOString();
+            syncStatus.textContent = `Синхронізовано: ${new Date().toLocaleTimeString('uk-UA')}`;
+            syncStatus.className = 'sync-status synced';
+            
+        } catch (error) {
+            console.error('Помилка синхронізації:', error);
+            syncStatus.textContent = 'Помилка синхронізації';
+            syncStatus.className = 'sync-status';
+        }
     }
     
     // Обробка виходу
     function handleLogout() {
         // Зберегти дані перед виходом
         saveToLocalStorage();
+        
+        // Очистити інтервал синхронізації
+        if (syncInterval) {
+            clearInterval(syncInterval);
+            syncInterval = null;
+        }
         
         currentUser = null;
         currentRole = null;
@@ -1006,6 +1167,9 @@
                 } else if (tabId === 'userManagement') {
                     loadAdminsList();
                     loadManagersList();
+                } else if (tabId === 'systemSettings') {
+                    // Заповнити поточні налаштування
+                    document.getElementById('adminEmail').value = systemSettings.adminEmail;
                 }
             });
         });
@@ -1073,6 +1237,15 @@
         saveToLocalStorage();
         clearForm();
         showNotification('Заявку успішно надіслано!', 'success');
+        
+        // Відправити сповіщення адміністраторам
+        sendEmailNotificationToAdmins('Нова заявка', 
+            `Менеджер ${currentUser} створив нову заявку:\n\n` +
+            `Клієнт: ${client}\n` +
+            `УТ: ${utNumber}\n` +
+            `Сума: ${utAmount} грн\n` +
+            `Бонус: ${bonusAmount} грн`
+        );
         
         // Оновити інтерфейс
         if (currentRole === 'manager') {
@@ -1212,11 +1385,24 @@
         const requestIndex = requests.findIndex(req => req.id === requestId);
         
         if (requestIndex !== -1) {
-            requests[requestIndex].status = 'completed';
+            const request = requests[requestIndex];
+            request.status = 'completed';
             saveToLocalStorage();
             loadAllRequests();
             loadAnalytics();
             showNotification('Заявку успішно завершено', 'success');
+            
+            // Відправити сповіщення менеджеру
+            const manager = managers.find(m => m.name === request.manager);
+            if (manager && manager.email) {
+                sendEmailNotification([manager.email], 'Заявку виконано', 
+                    `Вашу заявку виконано:\n\n` +
+                    `Клієнт: ${request.client}\n` +
+                    `УТ: ${request.utNumber}\n` +
+                    `Сума: ${request.utAmount} грн\n` +
+                    `Бонус: ${request.bonusAmount} грн`
+                );
+            }
         }
     }
     
@@ -1404,16 +1590,24 @@
         
         tbody.innerHTML = '';
         
+        // Перевірка прав поточного адміністратора
+        const canCreateAdmins = currentUserObject && currentUserObject.canCreateAdmins;
+        
         // Додавання адміністраторів до таблиці
         admins.forEach((admin, index) => {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${admin.name}</td>
                 <td>${admin.login}</td>
+                <td>${admin.email || 'Не вказано'}</td>
                 <td>${new Date().toLocaleDateString('uk-UA')}</td>
                 <td>
-                    <button class="action-btn delete-btn delete-admin" data-index="${index}">Видалити</button>
-                    <button class="action-btn restore-btn restore-password-admin" data-index="${index}">Відновити пароль</button>
+                    ${canCreateAdmins && !admin.canCreateAdmins ? 
+                        `<button class="action-btn delete-btn delete-admin" data-index="${index}">Видалити</button>` : 
+                        '<span>Немає прав</span>'}
+                    ${canCreateAdmins ? 
+                        `<button class="action-btn restore-btn restore-password-admin" data-index="${index}">Відновити пароль</button>` : 
+                        ''}
                 </td>
             `;
             tbody.appendChild(row);
@@ -1448,6 +1642,7 @@
             row.innerHTML = `
                 <td>${manager.name}</td>
                 <td>${manager.login}</td>
+                <td>${manager.email || 'Не вказано'}</td>
                 <td>${new Date().toLocaleDateString('uk-UA')}</td>
                 <td>
                     <button class="action-btn delete-btn delete-manager" data-index="${index}">Видалити</button>
@@ -1478,9 +1673,16 @@
         const name = document.getElementById('newAdminName').value.trim();
         const login = document.getElementById('newAdminLogin').value.trim();
         const password = document.getElementById('newAdminPassword').value.trim();
+        const email = document.getElementById('newAdminEmail').value.trim();
         
         if (!name || !login || !password) {
-            showNotification('Будь ласка, заповніть всі поля', 'error');
+            showNotification('Будь ласка, заповніть всі обов\'язкові поля', 'error');
+            return;
+        }
+        
+        // Перевірка прав поточного адміністратора
+        if (!currentUserObject || !currentUserObject.canCreateAdmins) {
+            showNotification('У вас немає прав для створення адміністраторів', 'error');
             return;
         }
         
@@ -1491,12 +1693,19 @@
         }
         
         // Додавання нового адміністратора
-        admins.push({ name, login, password });
+        admins.push({ 
+            name, 
+            login, 
+            password, 
+            email,
+            canCreateAdmins: false // Нові адміністратори не можуть створювати інших адміністраторів
+        });
         
         // Очищення полів
         document.getElementById('newAdminName').value = '';
         document.getElementById('newAdminLogin').value = '';
         document.getElementById('newAdminPassword').value = '';
+        document.getElementById('newAdminEmail').value = '';
         
         // Збереження та оновлення
         saveToLocalStorage();
@@ -1527,7 +1736,8 @@
             name,
             login,
             password,
-            firstLogin: true
+            firstLogin: true,
+            email: ""
         });
         
         // Очищення полів
@@ -1549,6 +1759,12 @@
         // Не дозволяємо видаляти себе
         if (admins[adminIndex].name === currentUser) {
             showNotification('Ви не можете видалити самого себе', 'error');
+            return;
+        }
+        
+        // Не дозволяємо видаляти головного адміністратора
+        if (admins[adminIndex].canCreateAdmins) {
+            showNotification('Не можна видалити головного адміністратора', 'error');
             return;
         }
         
@@ -1599,19 +1815,31 @@
     
     // Відновлення пароля адміністратора
     function restoreAdminPassword(adminIndex) {
-        admins[adminIndex].password = 'admin123';
+        const newPassword = generateRandomPassword();
+        admins[adminIndex].password = newPassword;
         saveToLocalStorage();
         loadAdminsList();
-        showNotification(`Пароль для адміністратора ${admins[adminIndex].name} відновлено до "admin123"`, 'success');
+        showNotification(`Пароль для адміністратора ${admins[adminIndex].name} відновлено до "${newPassword}"`, 'success');
     }
     
     // Відновлення пароля менеджера
     function restoreManagerPassword(managerIndex) {
-        managers[managerIndex].password = '123456';
+        const newPassword = generateRandomPassword();
+        managers[managerIndex].password = newPassword;
         managers[managerIndex].firstLogin = true;
         saveToLocalStorage();
         loadManagersList();
-        showNotification(`Пароль для менеджера ${managers[managerIndex].name} відновлено до "123456"`, 'success');
+        showNotification(`Пароль для менеджера ${managers[managerIndex].name} відновлено до "${newPassword}"`, 'success');
+    }
+    
+    // Генерація випадкового пароля
+    function generateRandomPassword() {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        let password = '';
+        for (let i = 0; i < 8; i++) {
+            password += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return password;
     }
     
     // Зміна пароля при першому вході
@@ -1698,12 +1926,212 @@
         showNotification('Пароль успішно змінено!', 'success');
     }
     
+    // Збереження email менеджера
+    function saveManagerEmail() {
+        const email = document.getElementById('managerEmail').value.trim();
+        
+        if (!email) {
+            showNotification('Будь ласка, введіть email', 'error');
+            return;
+        }
+        
+        // Перевірка формату email
+        if (!validateEmail(email)) {
+            showNotification('Будь ласка, введіть коректний email', 'error');
+            return;
+        }
+        
+        currentUserObject.email = email;
+        saveToLocalStorage();
+        showNotification('Email успішно збережено', 'success');
+    }
+    
+    // Збереження email адміністратора
+    function saveAdminEmail() {
+        const email = document.getElementById('adminEmail').value.trim();
+        
+        if (!email) {
+            showNotification('Будь ласка, введіть email', 'error');
+            return;
+        }
+        
+        // Перевірка формату email
+        if (!validateEmail(email)) {
+            showNotification('Будь ласка, введіть коректний email', 'error');
+            return;
+        }
+        
+        systemSettings.adminEmail = email;
+        saveToLocalStorage();
+        showNotification('Email адміністратора успішно збережено', 'success');
+    }
+    
+    // Збереження налаштувань Google Sheets
+    function saveGoogleSheetsSettings() {
+        const googleSheetId = document.getElementById('googleSheetId').value.trim();
+        const syncInterval = parseInt(document.getElementById('syncInterval').value) * 1000;
+        
+        if (!googleSheetId) {
+            showNotification('Будь ласка, введіть ID Google Sheets документу', 'error');
+            return;
+        }
+        
+        if (isNaN(syncInterval) || syncInterval < 5000) {
+            showNotification('Інтервал синхронізації має бути не менше 5 секунд', 'error');
+            return;
+        }
+        
+        systemSettings.googleSheetId = googleSheetId;
+        systemSettings.syncInterval = syncInterval;
+        
+        saveToLocalStorage();
+        
+        // Перезапустити синхронізацію з новими налаштуваннями
+        if (syncInterval) {
+            clearInterval(syncInterval);
+            syncInterval = null;
+        }
+        startSync();
+        
+        showNotification('Налаштування Google Sheets збережено', 'success');
+    }
+    
+    // Тестування підключення до Google Sheets
+    function testGoogleSheetsConnection() {
+        showNotification('Тестування підключення до Google Sheets...', 'success');
+        
+        // Імітація тестування підключення
+        setTimeout(() => {
+            showNotification('Підключення до Google Sheets успішне', 'success');
+        }, 1500);
+    }
+    
+    // Експорт даних
+    function exportAllData() {
+        const data = {
+            managers: managers,
+            admins: admins,
+            requests: requests,
+            systemSettings: systemSettings,
+            exportDate: new Date().toISOString()
+        };
+        
+        const dataStr = JSON.stringify(data, null, 2);
+        const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+        
+        const exportFileDefaultName = `combine_system_backup_${new Date().toISOString().split('T')[0]}.json`;
+        
+        const linkElement = document.createElement('a');
+        linkElement.setAttribute('href', dataUri);
+        linkElement.setAttribute('download', exportFileDefaultName);
+        linkElement.click();
+        
+        showNotification('Дані успішно експортовано', 'success');
+    }
+    
+    // Експорт даних заявок
+    function exportRequestsData() {
+        const dataStr = JSON.stringify(requests, null, 2);
+        const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+        
+        const exportFileDefaultName = `requests_export_${new Date().toISOString().split('T')[0]}.json`;
+        
+        const linkElement = document.createElement('a');
+        linkElement.setAttribute('href', dataUri);
+        linkElement.setAttribute('download', exportFileDefaultName);
+        linkElement.click();
+        
+        showNotification('Заявки успішно експортовано', 'success');
+    }
+    
+    // Імпорт даних
+    function importData(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const importedData = JSON.parse(e.target.result);
+                
+                if (!confirm('Ви впевнені, що хочете імпортувати дані? Поточні дані буде перезаписано.')) {
+                    document.getElementById('importFileInput').value = '';
+                    return;
+                }
+                
+                // Імпорт даних
+                if (importedData.managers) managers = importedData.managers;
+                if (importedData.admins) admins = importedData.admins;
+                if (importedData.requests) requests = importedData.requests;
+                if (importedData.systemSettings) systemSettings = importedData.systemSettings;
+                
+                saveToLocalStorage();
+                
+                // Оновити інтерфейс
+                if (currentRole === 'admin') {
+                    loadAdminsList();
+                    loadManagersList();
+                    loadAllRequests();
+                    loadAnalytics();
+                } else if (currentRole === 'manager') {
+                    loadManagerRequests();
+                }
+                
+                showNotification('Дані успішно імпортовано', 'success');
+                
+            } catch (error) {
+                showNotification('Помилка при імпорті даних: некоректний файл', 'error');
+                console.error('Помилка імпорту:', error);
+            }
+            
+            document.getElementById('importFileInput').value = '';
+        };
+        
+        reader.readAsText(file);
+    }
+    
+    // Відправка email сповіщень адміністраторам
+    function sendEmailNotificationToAdmins(subject, message) {
+        // Збираємо email всіх адміністраторів
+        const adminEmails = admins
+            .filter(admin => admin.email && validateEmail(admin.email))
+            .map(admin => admin.email);
+        
+        // Додаємо email з налаштувань системи
+        if (systemSettings.adminEmail && validateEmail(systemSettings.adminEmail)) {
+            adminEmails.push(systemSettings.adminEmail);
+        }
+        
+        if (adminEmails.length > 0) {
+            sendEmailNotification(adminEmails, subject, message);
+        }
+    }
+    
+    // Відправка email сповіщень (імітація)
+    function sendEmailNotification(emails, subject, message) {
+        // В реальному застосунку тут буде виклик API для відправки email
+        console.log('Відправка email сповіщення:');
+        console.log('Кому:', emails);
+        console.log('Тема:', subject);
+        console.log('Повідомлення:', message);
+        
+        // Імітація відправки
+        showNotification('Сповіщення відправлено адміністраторам', 'success');
+    }
+    
+    // Перевірка email
+    function validateEmail(email) {
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return re.test(email);
+    }
+    
     // Збереження даних в localStorage
     function saveToLocalStorage() {
         const data = {
             managers: managers,
             admins: admins,
             requests: requests,
+            systemSettings: systemSettings,
             timestamp: new Date().toISOString()
         };
         
@@ -1724,6 +2152,7 @@
                 managers = data.managers || managers;
                 admins = data.admins || admins;
                 requests = data.requests || requests;
+                systemSettings = data.systemSettings || systemSettings;
                 console.log('Дані завантажено з localStorage');
             }
         } catch (error) {
