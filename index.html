@@ -761,18 +761,23 @@
     <!-- Сповіщення -->
     <div id="notification" class="notification"></div>
     
-    <script>
-    // === КОНФІГУРАЦІЯ GOOGLE SHEETS ===
-    const SPREADSHEET_ID = '1LVKkEI4nTktZrUxvjiwZn6tQvODguAECrHN9QuJfhzY'; // Замініть на реальний ID
-    const API_KEY = 'AIzaSyCQ0K-7hM4qY6J9v6v7V8wX9yZ0a1b2c3d'; // Ключ API (безкоштовний)
+<script>
+    // === ПОЧАТКОВІ ДАНІ СИСТЕМИ ===
+    let managers = [
+        { name: "Євгеній", login: "Євгеній", password: "123456", firstLogin: true },
+        { name: "Дмитро", login: "Дмитро", password: "123456", firstLogin: true },
+        { name: "Павло", login: "Павло", password: "123456", firstLogin: true },
+        { name: "Сергій Н", login: "Сергій Н", password: "123456", firstLogin: true },
+        { name: "Сергій Г", login: "Сергій Г", password: "123456", firstLogin: true },
+        { name: "Михайло", login: "Михайло", password: "123456", firstLogin: true },
+        { name: "Ігор", login: "Ігор", password: "123456", firstLogin: true },
+        { name: "Володимир", login: "Володимир", password: "123456", firstLogin: true }
+    ];
     
-    // URL для роботи з Google Sheets API
-    const SHEETS_API = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/`;
-    
-    // === ДАНІ СИСТЕМИ (тимчасові, поки не завантажимо з Google Sheets) ===
-    let managers = [];
-    let admins = [];
-    let requests = [];
+    let admins = [
+        { name: "Шокало Євгеній", login: "Sedoy", password: "Sed2545oy3206" },
+        { name: "Адмін 2", login: "admin2", password: "admin123" }
+    ];
     
     // === ПОТОЧНИЙ КОРИСТУВАЧ ===
     let currentUser = null;
@@ -794,8 +799,11 @@
     const changeManagerPasswordBtn = document.getElementById('changeManagerPasswordBtn');
     
     // === ІНІЦІАЛІЗАЦІЯ ===
-    document.addEventListener('DOMContentLoaded', async function() {
+    document.addEventListener('DOMContentLoaded', function() {
         console.log('Завантаження системи...');
+        
+        // Завантаження даних з localStorage
+        loadFromLocalStorage();
         
         // Налаштування подій
         loginBtn.addEventListener('click', handleLogin);
@@ -812,22 +820,15 @@
         setupTabs();
         setupUserManagementTabs();
         
-        // Завантаження даних з Google Sheets
-        try {
-            await loadAllData();
-            console.log('Дані успішно завантажено з Google Sheets');
-        } catch (error) {
-            console.error('Помилка завантаження з Google Sheets:', error);
-            showNotification('Не вдалося завантажити дані. Використовуються локальні дані.', 'error');
-            loadFromLocalStorage(); // Резервний варіант
-        }
+        // Заповнення фільтрів та автозаповнення
+        populateManagerFilter();
+        populateManagerAutocomplete();
         
-        // Автоматичне оновлення даних кожні 30 секунд
-        setInterval(async () => {
-            if (currentUser) {
-                await loadAllData();
-            }
-        }, 30000);
+        // Автоматичне збереження кожні 30 секунд
+        setInterval(saveToLocalStorage, 30000);
+        
+        // Збереження при закритті
+        window.addEventListener('beforeunload', saveToLocalStorage);
         
         // Перевірка, чи користувач вже ввійшов
         const savedUser = localStorage.getItem('currentUser');
@@ -848,99 +849,10 @@
         }
     });
     
-    // === ФУНКЦІЇ ДЛЯ РОБОТИ З GOOGLE SHEETS ===
-    
-    // Завантажити всі дані
-    async function loadAllData() {
-        try {
-            // Завантажуємо менеджерів
-            const managersResponse = await fetch(`${SHEETS_API}managers?key=${API_KEY}`);
-            const managersData = await managersResponse.json();
-            managers = parseSheetData(managersData.values || [], ['name', 'login', 'password', 'firstLogin']);
-            
-            // Завантажуємо адміністраторів
-            const adminsResponse = await fetch(`${SHEETS_API}admins?key=${API_KEY}`);
-            const adminsData = await adminsResponse.json();
-            admins = parseSheetData(adminsData.values || [], ['name', 'login', 'password']);
-            
-            // Завантажуємо заявки
-            const requestsResponse = await fetch(`${SHEETS_API}requests?key=${API_KEY}`);
-            const requestsData = await requestsResponse.json();
-            requests = parseSheetData(requestsData.values || [], [
-                'id', 'date', 'manager', 'client', 'utNumber', 'utAmount', 
-                'goodsAmount', 'ultraMinus', 'delivery', 'bonusAmount', 
-                'bonusCalculation', 'paymentCard', 'recipientData', 'status'
-            ]);
-            
-            // Оновлюємо інтерфейс
-            populateManagerFilter();
-            populateManagerAutocomplete();
-            
-            if (currentRole === 'admin') {
-                loadAllRequests();
-                loadAnalytics();
-                loadAdminsList();
-                loadManagersList();
-            } else if (currentRole === 'manager') {
-                loadManagerRequests();
-            }
-            
-            return true;
-        } catch (error) {
-            console.error('Помилка завантаження:', error);
-            return false;
-        }
-    }
-    
-    // Зберегти дані в Google Sheets
-    async function saveToSheet(sheetName, data) {
-        try {
-            // Конвертуємо дані у формат Google Sheets
-            const values = data.map(item => Object.values(item));
-            
-            const response = await fetch(
-                `${SHEETS_API}${sheetName}?valueInputOption=RAW&key=${API_KEY}`,
-                {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ values })
-                }
-            );
-            
-            return response.ok;
-        } catch (error) {
-            console.error('Помилка збереження:', error);
-            return false;
-        }
-    }
-    
-    // Парсинг даних з Google Sheets
-    function parseSheetData(values, headers) {
-        if (!values.length) return [];
-        
-        return values.slice(1).map(row => {
-            const obj = {};
-            headers.forEach((header, index) => {
-                obj[header] = row[index] || '';
-                
-                // Конвертація типів
-                if (header === 'id' || header === 'utAmount' || header === 'goodsAmount' || 
-                    header === 'ultraMinus' || header === 'delivery' || header === 'bonusAmount') {
-                    obj[header] = parseFloat(obj[header]) || 0;
-                }
-                
-                if (header === 'firstLogin') {
-                    obj[header] = obj[header] === 'true';
-                }
-            });
-            return obj;
-        });
-    }
-    
     // === ОСНОВНІ ФУНКЦІЇ СИСТЕМИ ===
     
     // Обробка входу
-    async function handleLogin() {
+    function handleLogin() {
         const loginType = document.getElementById('loginType').value;
         const username = document.getElementById('username').value.trim();
         const password = document.getElementById('password').value.trim();
@@ -949,9 +861,6 @@
             showNotification('Будь ласка, заповніть всі поля', 'error');
             return;
         }
-        
-        // Оновлюємо дані перед перевіркою
-        await loadAllData();
         
         if (loginType === 'manager') {
             const manager = managers.find(m => m.login === username && m.password === password);
@@ -986,8 +895,147 @@
         }
     }
     
-    // Відправка нової заявки (ОНОВЛЕНО для Google Sheets)
-    async function handleSubmitRequest() {
+    // Показати панель управління
+    function showDashboard() {
+        loginScreen.style.display = 'none';
+        dashboard.style.display = 'block';
+        
+        // Оновити інформацію про користувача
+        currentUserElement.textContent = currentUser;
+        currentRoleElement.textContent = currentRole === 'manager' ? 'Менеджер' : 'Адміністратор';
+        
+        // Показати відповідні вкладки та контент
+        if (currentRole === 'manager') {
+            document.getElementById('managerTabs').style.display = 'flex';
+            document.getElementById('adminTabs').style.display = 'none';
+            document.getElementById('managerContent').style.display = 'block';
+            document.getElementById('adminContent').style.display = 'none';
+            
+            // Завантажити заявки менеджера
+            loadManagerRequests();
+        } else {
+            document.getElementById('managerTabs').style.display = 'none';
+            document.getElementById('adminTabs').style.display = 'flex';
+            document.getElementById('managerContent').style.display = 'none';
+            document.getElementById('adminContent').style.display = 'block';
+            
+            // Завантажити всі заявки
+            loadAllRequests();
+            
+            // Завантажити аналітику
+            loadAnalytics();
+            
+            // Завантажити списки користувачів
+            loadAdminsList();
+            loadManagersList();
+        }
+    }
+    
+    // Обробка виходу
+    function handleLogout() {
+        // Зберегти дані перед виходом
+        saveToLocalStorage();
+        
+        currentUser = null;
+        currentRole = null;
+        currentUserObject = null;
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('currentRole');
+        
+        // Скинути форму входу
+        document.getElementById('username').value = '';
+        document.getElementById('password').value = '';
+        changePasswordForm.style.display = 'none';
+        
+        dashboard.style.display = 'none';
+        loginScreen.style.display = 'block';
+    }
+    
+    // Налаштування вкладок
+    function setupTabs() {
+        // Вкладки менеджера
+        const managerTabElements = document.querySelectorAll('#managerTabs .tab');
+        managerTabElements.forEach(tab => {
+            tab.addEventListener('click', function() {
+                const tabId = this.getAttribute('data-tab');
+                
+                // Активувати вкладку
+                managerTabElements.forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Показати відповідний контент
+                const tabContents = document.querySelectorAll('#managerContent .tab-content');
+                tabContents.forEach(content => {
+                    content.classList.remove('active');
+                    if (content.id === tabId) {
+                        content.classList.add('active');
+                    }
+                });
+                
+                // Оновити таблицю заявок
+                if (tabId === 'myRequests') {
+                    loadManagerRequests();
+                }
+            });
+        });
+        
+        // Вкладки адміністратора
+        const adminTabElements = document.querySelectorAll('#adminTabs .tab');
+        adminTabElements.forEach(tab => {
+            tab.addEventListener('click', function() {
+                const tabId = this.getAttribute('data-tab');
+                
+                // Активувати вкладку
+                adminTabElements.forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Показати відповідний контент
+                const tabContents = document.querySelectorAll('#adminContent .tab-content');
+                tabContents.forEach(content => {
+                    content.classList.remove('active');
+                    if (content.id === tabId) {
+                        content.classList.add('active');
+                    }
+                });
+                
+                // Завантажити дані для відповідної вкладки
+                if (tabId === 'allRequests') {
+                    loadAllRequests();
+                } else if (tabId === 'analytics') {
+                    loadAnalytics();
+                } else if (tabId === 'userManagement') {
+                    loadAdminsList();
+                    loadManagersList();
+                }
+            });
+        });
+    }
+    
+    // Налаштування вкладок керування користувачами
+    function setupUserManagementTabs() {
+        const userTabs = document.querySelectorAll('.user-management-tab');
+        userTabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                const tabId = this.getAttribute('data-user-tab');
+                
+                // Активувати вкладку
+                userTabs.forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Показати відповідний контент
+                const tabContents = document.querySelectorAll('.user-management-content');
+                tabContents.forEach(content => {
+                    content.classList.remove('active');
+                    if (content.id === tabId + 'Tab') {
+                        content.classList.add('active');
+                    }
+                });
+            });
+        });
+    }
+    
+    // Відправка нової заявки
+    function handleSubmitRequest() {
         const client = document.getElementById('client').value.trim();
         const utNumber = document.getElementById('utNumber').value.trim();
         const utAmount = parseFloat(document.getElementById('utAmount').value) || 0;
@@ -1022,71 +1070,72 @@
         };
         
         requests.push(newRequest);
+        saveToLocalStorage();
+        clearForm();
+        showNotification('Заявку успішно надіслано!', 'success');
         
-        // Зберігаємо в Google Sheets
-        const saved = await saveToSheet('requests', requests);
-        
-        if (saved) {
-            clearForm();
-            showNotification('Заявку успішно надіслано!', 'success');
-            
-            // Оновлюємо інтерфейс
-            if (currentRole === 'manager') {
-                loadManagerRequests();
-            }
-            
-            const myRequestsTab = document.querySelector('[data-tab="myRequests"]');
-            if (myRequestsTab) myRequestsTab.click();
-        } else {
-            showNotification('Помилка збереження заявки', 'error');
+        // Оновити інтерфейс
+        if (currentRole === 'manager') {
+            loadManagerRequests();
         }
+        
+        // Перехід до вкладки з заявками
+        document.querySelector('[data-tab="myRequests"]').click();
     }
     
-    // Видалити тестову заявку (НОВА ФУНКЦІЯ для адміністратора)
-    async function deleteRequest(requestId) {
-        if (!confirm('Ви впевнені, що хочете видалити цю заявку?')) return;
+    // Завантаження заявок менеджера
+    function loadManagerRequests() {
+        const tbody = document.getElementById('managerRequestsBody');
+        if (!tbody) return;
         
-        const requestIndex = requests.findIndex(req => req.id === requestId);
-        
-        if (requestIndex !== -1) {
-            requests.splice(requestIndex, 1);
-            
-            // Зберігаємо в Google Sheets
-            const saved = await saveToSheet('requests', requests);
-            
-            if (saved) {
-                await loadAllData(); // Оновлюємо дані
-                showNotification('Заявку успішно видалено', 'success');
-            } else {
-                showNotification('Помилка видалення заявки', 'error');
-            }
-        }
-    }
-    
-    // Оновити функцію completeRequest для Google Sheets
-    async function completeRequest(requestId) {
-        const requestIndex = requests.findIndex(req => req.id === requestId);
-        
-        if (requestIndex !== -1) {
-            requests[requestIndex].status = 'completed';
-            
-            // Зберігаємо в Google Sheets
-            const saved = await saveToSheet('requests', requests);
-            
-            if (saved) {
-                await loadAllData(); // Оновлюємо дані
-                showNotification('Заявку успішно завершено', 'success');
-            } else {
-                showNotification('Помилка завершення заявки', 'error');
-            }
-        }
-    }
-    
-    // Додати функцію видалення до таблиці заявок
-    function loadAllRequests() {
-        const tbody = document.getElementById('adminRequestsBody');
         tbody.innerHTML = '';
         
+        // Фільтрація заявок поточного менеджера
+        const managerRequests = requests.filter(req => req.manager === currentUser);
+        
+        // Сортування за датою
+        managerRequests.sort((a, b) => new Date(b.date) - new Date(a.date));
+        
+        // Додавання рядків до таблиці
+        managerRequests.forEach(request => {
+            const row = document.createElement('tr');
+            
+            // Форматування статусу
+            let statusBadge = '';
+            if (request.status === 'in-progress') {
+                statusBadge = '<span class="status-in-progress">В роботі</span>';
+            } else {
+                statusBadge = '<span class="status-completed">Виконано</span>';
+            }
+            
+            row.innerHTML = `
+                <td>${request.date}</td>
+                <td>${request.client}</td>
+                <td>${request.utNumber}</td>
+                <td>${request.utAmount.toLocaleString()} грн</td>
+                <td>${request.bonusAmount.toLocaleString()} грн</td>
+                <td>${statusBadge}</td>
+            `;
+            
+            tbody.appendChild(row);
+        });
+        
+        // Якщо заявок немає
+        if (managerRequests.length === 0) {
+            const row = document.createElement('tr');
+            row.innerHTML = `<td colspan="6" style="text-align: center;">У вас ще немає заявок</td>`;
+            tbody.appendChild(row);
+        }
+    }
+    
+    // Завантаження всіх заявок для адміністратора
+    function loadAllRequests() {
+        const tbody = document.getElementById('adminRequestsBody');
+        if (!tbody) return;
+        
+        tbody.innerHTML = '';
+        
+        // Фільтрація заявок
         let filteredRequests = [...requests];
         const managerFilter = document.getElementById('filterManager').value;
         const statusFilter = document.getElementById('filterStatus').value;
@@ -1098,20 +1147,26 @@
         if (dateFrom) filteredRequests = filteredRequests.filter(req => new Date(req.date) >= new Date(dateFrom));
         if (dateTo) filteredRequests = filteredRequests.filter(req => new Date(req.date) <= new Date(dateTo));
         
+        // Сортування
         filteredRequests.sort((a, b) => new Date(b.date) - new Date(a.date));
         
+        // Додавання рядків до таблиці
         filteredRequests.forEach(request => {
             const row = document.createElement('tr');
             
-            let statusBadge = request.status === 'in-progress' 
-                ? '<span class="status-in-progress">В роботі</span>'
-                : '<span class="status-completed">Виконано</span>';
+            // Форматування статусу
+            let statusBadge = '';
+            if (request.status === 'in-progress') {
+                statusBadge = '<span class="status-in-progress">В роботі</span>';
+            } else {
+                statusBadge = '<span class="status-completed">Виконано</span>';
+            }
             
+            // Кнопки дій
             let actionButtons = '';
             if (request.status === 'in-progress') {
                 actionButtons += `<button class="action-btn complete-btn" data-id="${request.id}">Виконано</button>`;
             }
-            // КНОПКА ВИДАЛЕННЯ для всіх заявок
             actionButtons += `<button class="action-btn delete-btn delete-request" data-id="${request.id}">Видалити</button>`;
             
             row.innerHTML = `
@@ -1129,7 +1184,7 @@
             tbody.appendChild(row);
         });
         
-        // Додаємо обробники подій
+        // Додавання обробників подій
         tbody.querySelectorAll('.complete-btn').forEach(button => {
             button.addEventListener('click', function() {
                 const requestId = parseInt(this.getAttribute('data-id'));
@@ -1144,6 +1199,7 @@
             });
         });
         
+        // Якщо заявок немає
         if (filteredRequests.length === 0) {
             const row = document.createElement('tr');
             row.innerHTML = `<td colspan="9" style="text-align: center;">Заявок не знайдено</td>`;
@@ -1151,10 +1207,274 @@
         }
     }
     
-    // === РЕШТА ФУНКЦІЙ (залишаються без змін, але адаптовані для Google Sheets) ===
+    // Завершення заявки
+    function completeRequest(requestId) {
+        const requestIndex = requests.findIndex(req => req.id === requestId);
+        
+        if (requestIndex !== -1) {
+            requests[requestIndex].status = 'completed';
+            saveToLocalStorage();
+            loadAllRequests();
+            loadAnalytics();
+            showNotification('Заявку успішно завершено', 'success');
+        }
+    }
     
-    // Функції для роботи з користувачами (оновлені для Google Sheets)
-    async function addNewAdmin() {
+    // Видалення заявки
+    function deleteRequest(requestId) {
+        if (!confirm('Ви впевнені, що хочете видалити цю заявку?')) return;
+        
+        const requestIndex = requests.findIndex(req => req.id === requestId);
+        
+        if (requestIndex !== -1) {
+            requests.splice(requestIndex, 1);
+            saveToLocalStorage();
+            loadAllRequests();
+            loadAnalytics();
+            showNotification('Заявку успішно видалено', 'success');
+        }
+    }
+    
+    // Застосування фільтрів
+    function applyFilters() {
+        loadAllRequests();
+    }
+    
+    // Заповнення фільтра менеджерів
+    function populateManagerFilter() {
+        const filterManager = document.getElementById('filterManager');
+        if (!filterManager) return;
+        
+        filterManager.innerHTML = '<option value="">Всі менеджери</option>';
+        
+        // Додавання менеджерів до фільтра
+        managers.forEach(manager => {
+            const option = document.createElement('option');
+            option.value = manager.name;
+            option.textContent = manager.name;
+            filterManager.appendChild(option);
+        });
+    }
+    
+    // Заповнення списку менеджерів для автозаповнення
+    function populateManagerAutocomplete() {
+        const managerList = document.getElementById('managerList');
+        if (!managerList) return;
+        
+        managerList.innerHTML = '';
+        
+        // Додавання менеджерів до автозаповнення
+        managers.forEach(manager => {
+            const option = document.createElement('option');
+            option.value = manager.login;
+            managerList.appendChild(option);
+        });
+    }
+    
+    // Завантаження аналітики
+    function loadAnalytics() {
+        // Загальна сума УТ
+        const totalUtAmount = requests.reduce((sum, req) => sum + req.utAmount, 0);
+        document.getElementById('totalUtAmount').textContent = totalUtAmount.toLocaleString() + ' грн';
+        
+        // Загальна сума бонусів
+        const totalBonusAmount = requests.reduce((sum, req) => sum + req.bonusAmount, 0);
+        document.getElementById('totalBonusAmount').textContent = totalBonusAmount.toLocaleString() + ' грн';
+        
+        // Загальна кількість заявок
+        document.getElementById('totalRequests').textContent = requests.length;
+        
+        // Створення графіка по менеджерах
+        createManagersChart();
+        
+        // Створення графіка по днях
+        createDaysChart();
+    }
+    
+    // Створення графіка по менеджерах
+    function createManagersChart() {
+        const managersChart = document.getElementById('managersChart');
+        if (!managersChart) return;
+        
+        managersChart.innerHTML = '';
+        
+        // Групування заявок по менеджерах
+        const managerStats = {};
+        managers.forEach(manager => {
+            managerStats[manager.name] = 0;
+        });
+        
+        requests.forEach(request => {
+            if (managerStats.hasOwnProperty(request.manager)) {
+                managerStats[request.manager]++;
+            }
+        });
+        
+        // Визначення максимального значення
+        const maxValue = Math.max(...Object.values(managerStats));
+        
+        // Створення стовпців графіка
+        Object.keys(managerStats).forEach(managerName => {
+            const value = managerStats[managerName];
+            const height = maxValue > 0 ? (value / maxValue) * 100 : 0;
+            
+            const barContainer = document.createElement('div');
+            barContainer.style.flex = '1';
+            barContainer.style.display = 'flex';
+            barContainer.style.flexDirection = 'column';
+            barContainer.style.alignItems = 'center';
+            
+            const bar = document.createElement('div');
+            bar.className = 'chart-bar-item';
+            bar.style.height = `${height}%`;
+            bar.title = `${value} заявок`;
+            
+            const label = document.createElement('div');
+            label.className = 'chart-bar-label';
+            label.textContent = managerName;
+            
+            barContainer.appendChild(bar);
+            barContainer.appendChild(label);
+            managersChart.appendChild(barContainer);
+        });
+    }
+    
+    // Створення графіка по днях
+    function createDaysChart() {
+        const daysChart = document.getElementById('daysChart');
+        if (!daysChart) return;
+        
+        daysChart.innerHTML = '';
+        
+        // Групування заявок по днях (останні 7 днів)
+        const last7Days = [];
+        for (let i = 6; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            const dateString = date.toISOString().split('T')[0];
+            last7Days.push({
+                date: dateString,
+                displayDate: date.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' }),
+                count: 0
+            });
+        }
+        
+        // Підрахунок заявок по днях
+        requests.forEach(request => {
+            const requestDate = request.date;
+            const dayStat = last7Days.find(day => day.date === requestDate);
+            if (dayStat) {
+                dayStat.count++;
+            }
+        });
+        
+        // Визначення максимального значення
+        const maxValue = Math.max(...last7Days.map(day => day.count));
+        
+        // Створення стовпців графіка
+        last7Days.forEach(day => {
+            const height = maxValue > 0 ? (day.count / maxValue) * 100 : 0;
+            
+            const barContainer = document.createElement('div');
+            barContainer.style.flex = '1';
+            barContainer.style.display = 'flex';
+            barContainer.style.flexDirection = 'column';
+            barContainer.style.alignItems = 'center';
+            
+            const bar = document.createElement('div');
+            bar.className = 'chart-bar-item';
+            bar.style.height = `${height}%`;
+            bar.style.backgroundColor = '#0be881';
+            bar.title = `${day.count} заявок`;
+            
+            const label = document.createElement('div');
+            label.className = 'chart-bar-label';
+            label.textContent = day.displayDate;
+            
+            barContainer.appendChild(bar);
+            barContainer.appendChild(label);
+            daysChart.appendChild(barContainer);
+        });
+    }
+    
+    // Завантаження списку адміністраторів
+    function loadAdminsList() {
+        const tbody = document.getElementById('adminsList');
+        if (!tbody) return;
+        
+        tbody.innerHTML = '';
+        
+        // Додавання адміністраторів до таблиці
+        admins.forEach((admin, index) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${admin.name}</td>
+                <td>${admin.login}</td>
+                <td>${new Date().toLocaleDateString('uk-UA')}</td>
+                <td>
+                    <button class="action-btn delete-btn delete-admin" data-index="${index}">Видалити</button>
+                    <button class="action-btn restore-btn restore-password-admin" data-index="${index}">Відновити пароль</button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+        
+        // Додавання обробників подій для кнопок
+        tbody.querySelectorAll('.delete-admin').forEach(button => {
+            button.addEventListener('click', function() {
+                const adminIndex = parseInt(this.getAttribute('data-index'));
+                deleteAdmin(adminIndex);
+            });
+        });
+        
+        tbody.querySelectorAll('.restore-password-admin').forEach(button => {
+            button.addEventListener('click', function() {
+                const adminIndex = parseInt(this.getAttribute('data-index'));
+                restoreAdminPassword(adminIndex);
+            });
+        });
+    }
+    
+    // Завантаження списку менеджерів
+    function loadManagersList() {
+        const tbody = document.getElementById('managersList');
+        if (!tbody) return;
+        
+        tbody.innerHTML = '';
+        
+        // Додавання менеджерів до таблиці
+        managers.forEach((manager, index) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${manager.name}</td>
+                <td>${manager.login}</td>
+                <td>${new Date().toLocaleDateString('uk-UA')}</td>
+                <td>
+                    <button class="action-btn delete-btn delete-manager" data-index="${index}">Видалити</button>
+                    <button class="action-btn restore-btn restore-password-manager" data-index="${index}">Відновити пароль</button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+        
+        // Додавання обробників подій для кнопок
+        tbody.querySelectorAll('.delete-manager').forEach(button => {
+            button.addEventListener('click', function() {
+                const managerIndex = parseInt(this.getAttribute('data-index'));
+                deleteManager(managerIndex);
+            });
+        });
+        
+        tbody.querySelectorAll('.restore-password-manager').forEach(button => {
+            button.addEventListener('click', function() {
+                const managerIndex = parseInt(this.getAttribute('data-index'));
+                restoreManagerPassword(managerIndex);
+            });
+        });
+    }
+    
+    // Додавання нового адміністратора
+    function addNewAdmin() {
         const name = document.getElementById('newAdminName').value.trim();
         const login = document.getElementById('newAdminLogin').value.trim();
         const password = document.getElementById('newAdminPassword').value.trim();
@@ -1164,68 +1484,268 @@
             return;
         }
         
+        // Перевірка, чи логін вже існує
         if (admins.some(admin => admin.login === login)) {
             showNotification('Адміністратор з таким логіном вже існує', 'error');
             return;
         }
         
+        // Додавання нового адміністратора
         admins.push({ name, login, password });
         
-        const saved = await saveToSheet('admins', admins);
+        // Очищення полів
+        document.getElementById('newAdminName').value = '';
+        document.getElementById('newAdminLogin').value = '';
+        document.getElementById('newAdminPassword').value = '';
         
-        if (saved) {
-            document.getElementById('newAdminName').value = '';
-            document.getElementById('newAdminLogin').value = '';
-            document.getElementById('newAdminPassword').value = '';
-            loadAdminsList();
-            showNotification('Нового адміністратора успішно додано', 'success');
-        } else {
-            showNotification('Помилка збереження адміністратора', 'error');
-        }
+        // Збереження та оновлення
+        saveToLocalStorage();
+        loadAdminsList();
+        
+        showNotification('Нового адміністратора успішно додано', 'success');
     }
     
-    async function deleteAdmin(adminIndex) {
+    // Додавання нового менеджера
+    function addNewManager() {
+        const name = document.getElementById('newManagerName').value.trim();
+        const login = document.getElementById('newManagerLogin').value.trim();
+        const password = document.getElementById('newManagerPassword').value.trim();
+        
+        if (!name || !login || !password) {
+            showNotification('Будь ласка, заповніть всі поля', 'error');
+            return;
+        }
+        
+        // Перевірка, чи логін вже існує
+        if (managers.some(manager => manager.login === login)) {
+            showNotification('Менеджер з таким логіном вже існує', 'error');
+            return;
+        }
+        
+        // Додавання нового менеджера
+        managers.push({
+            name,
+            login,
+            password,
+            firstLogin: true
+        });
+        
+        // Очищення полів
+        document.getElementById('newManagerName').value = '';
+        document.getElementById('newManagerLogin').value = '';
+        document.getElementById('newManagerPassword').value = '';
+        
+        // Збереження та оновлення
+        saveToLocalStorage();
+        loadManagersList();
+        populateManagerFilter();
+        populateManagerAutocomplete();
+        
+        showNotification('Нового менеджера успішно додано', 'success');
+    }
+    
+    // Видалення адміністратора
+    function deleteAdmin(adminIndex) {
+        // Не дозволяємо видаляти себе
         if (admins[adminIndex].name === currentUser) {
             showNotification('Ви не можете видалити самого себе', 'error');
             return;
         }
         
+        // Перевірка, чи залишиться хоча б один адміністратор
         if (admins.length <= 1) {
             showNotification('Не можна видалити останнього адміністратора', 'error');
             return;
         }
         
+        // Видалення адміністратора
         admins.splice(adminIndex, 1);
         
-        const saved = await saveToSheet('admins', admins);
+        // Збереження та оновлення
+        saveToLocalStorage();
+        loadAdminsList();
         
-        if (saved) {
-            loadAdminsList();
-            showNotification('Адміністратора успішно видалено', 'success');
-        } else {
-            showNotification('Помилка видалення адміністратора', 'error');
-        }
+        showNotification('Адміністратора успішно видалено', 'success');
     }
     
-    // ... (решта функцій залишаються аналогічними, але з викликом saveToSheet)
+    // Видалення менеджера
+    function deleteManager(managerIndex) {
+        // Не дозволяємо видаляти себе
+        if (currentRole === 'manager' && managers[managerIndex].name === currentUser) {
+            showNotification('Ви не можете видалити самого себе', 'error');
+            return;
+        }
+        
+        // Перевірка, чи є у менеджера активні заявки
+        const managerName = managers[managerIndex].name;
+        const managerRequests = requests.filter(req => req.manager === managerName && req.status === 'in-progress');
+        
+        if (managerRequests.length > 0) {
+            showNotification('Не можна видалити менеджера з активними заявками', 'error');
+            return;
+        }
+        
+        // Видалення менеджера
+        managers.splice(managerIndex, 1);
+        
+        // Збереження та оновлення
+        saveToLocalStorage();
+        loadManagersList();
+        populateManagerFilter();
+        populateManagerAutocomplete();
+        
+        showNotification('Менеджера успішно видалено', 'success');
+    }
     
-    // === ФУНКЦІЇ ЛОКАЛЬНОГО СХОВИЩА (резервні) ===
+    // Відновлення пароля адміністратора
+    function restoreAdminPassword(adminIndex) {
+        admins[adminIndex].password = 'admin123';
+        saveToLocalStorage();
+        loadAdminsList();
+        showNotification(`Пароль для адміністратора ${admins[adminIndex].name} відновлено до "admin123"`, 'success');
+    }
+    
+    // Відновлення пароля менеджера
+    function restoreManagerPassword(managerIndex) {
+        managers[managerIndex].password = '123456';
+        managers[managerIndex].firstLogin = true;
+        saveToLocalStorage();
+        loadManagersList();
+        showNotification(`Пароль для менеджера ${managers[managerIndex].name} відновлено до "123456"`, 'success');
+    }
+    
+    // Зміна пароля при першому вході
+    function changePasswordOnLogin() {
+        const newPassword = document.getElementById('newPassword').value.trim();
+        const confirmPassword = document.getElementById('confirmPassword').value.trim();
+        
+        if (!newPassword || !confirmPassword) {
+            showNotification('Будь ласка, заповніть всі поля', 'error');
+            return;
+        }
+        
+        if (newPassword !== confirmPassword) {
+            showNotification('Паролі не співпадають', 'error');
+            return;
+        }
+        
+        if (newPassword.length < 6) {
+            showNotification('Пароль повинен містити мінімум 6 символів', 'error');
+            return;
+        }
+        
+        // Оновлення пароля
+        currentUserObject.password = newPassword;
+        currentUserObject.firstLogin = false;
+        
+        // Збереження
+        localStorage.setItem('currentUser', currentUser);
+        localStorage.setItem('currentRole', currentRole);
+        saveToLocalStorage();
+        
+        // Сховати форму
+        changePasswordForm.style.display = 'none';
+        
+        // Очистити поля
+        document.getElementById('newPassword').value = '';
+        document.getElementById('confirmPassword').value = '';
+        
+        // Показати панель
+        showDashboard();
+        
+        showNotification('Пароль успішно змінено!', 'success');
+    }
+    
+    // Зміна пароля менеджера в налаштуваннях
+    function changeManagerPassword() {
+        const currentPassword = document.getElementById('currentPasswordManager').value.trim();
+        const newPassword = document.getElementById('newPasswordManager').value.trim();
+        const confirmPassword = document.getElementById('confirmPasswordManager').value.trim();
+        
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            showNotification('Будь ласка, заповніть всі поля', 'error');
+            return;
+        }
+        
+        // Перевірка поточного пароля
+        if (currentPassword !== currentUserObject.password) {
+            showNotification('Поточний пароль введено невірно', 'error');
+            return;
+        }
+        
+        if (newPassword !== confirmPassword) {
+            showNotification('Нові паролі не співпадають', 'error');
+            return;
+        }
+        
+        if (newPassword.length < 6) {
+            showNotification('Пароль повинен містити мінімум 6 символів', 'error');
+            return;
+        }
+        
+        // Оновлення пароля
+        currentUserObject.password = newPassword;
+        currentUserObject.firstLogin = false;
+        
+        // Очищення полів
+        document.getElementById('currentPasswordManager').value = '';
+        document.getElementById('newPasswordManager').value = '';
+        document.getElementById('confirmPasswordManager').value = '';
+        
+        // Збереження
+        saveToLocalStorage();
+        
+        showNotification('Пароль успішно змінено!', 'success');
+    }
+    
+    // Збереження даних в localStorage
     function saveToLocalStorage() {
-        const data = { managers, admins, requests, timestamp: new Date().toISOString() };
-        localStorage.setItem('combineData', JSON.stringify(data));
-    }
-    
-    function loadFromLocalStorage() {
-        const savedData = localStorage.getItem('combineData');
-        if (savedData) {
-            const data = JSON.parse(savedData);
-            managers = data.managers || managers;
-            admins = data.admins || admins;
-            requests = data.requests || requests;
+        const data = {
+            managers: managers,
+            admins: admins,
+            requests: requests,
+            timestamp: new Date().toISOString()
+        };
+        
+        try {
+            localStorage.setItem('combineData', JSON.stringify(data));
+            console.log('Дані збережено в localStorage');
+        } catch (error) {
+            console.error('Помилка збереження:', error);
         }
     }
     
-    // === ПОКАЗ СПОВІЩЕНЬ ===
+    // Завантаження даних з localStorage
+    function loadFromLocalStorage() {
+        try {
+            const savedData = localStorage.getItem('combineData');
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                managers = data.managers || managers;
+                admins = data.admins || admins;
+                requests = data.requests || requests;
+                console.log('Дані завантажено з localStorage');
+            }
+        } catch (error) {
+            console.error('Помилка завантаження даних:', error);
+        }
+    }
+    
+    // Очищення форми
+    function clearForm() {
+        document.getElementById('client').value = '';
+        document.getElementById('utNumber').value = '';
+        document.getElementById('utAmount').value = '';
+        document.getElementById('goodsAmount').value = '';
+        document.getElementById('ultraMinus').value = '';
+        document.getElementById('delivery').value = '';
+        document.getElementById('bonusAmount').value = '';
+        document.getElementById('bonusCalculation').value = '';
+        document.getElementById('paymentCard').value = '';
+        document.getElementById('recipientData').value = '';
+    }
+    
+    // Показати сповіщення
     function showNotification(message, type) {
         notification.textContent = message;
         notification.className = `notification ${type}`;
@@ -1235,8 +1755,6 @@
             notification.style.display = 'none';
         }, 3000);
     }
-    
-    // ... (інші допоміжні функції залишаються без змін)
 </script>
 </body>
 </html>
